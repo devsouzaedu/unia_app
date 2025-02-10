@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 export default function DesignPage() {
   const searchParams = useSearchParams();
@@ -15,11 +16,14 @@ export default function DesignPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {urls.map((url: string, index: number) => (
-          <img
+          <Image
             key={index}
             src={url}
             alt={`Unha ${index + 1}`}
-            className="w-32 h-32 object-cover rounded shadow"
+            width={128}
+            height={128}
+            className="rounded shadow"
+            unoptimized={true}  // Use esta opção para evitar otimizações se as URLs forem externas
           />
         ))}
       </div>
