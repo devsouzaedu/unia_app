@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import Replicate from "replicate";
 import FormData from "form-data";
@@ -25,7 +26,8 @@ export async function POST(request: Request) {
       auth: process.env.REPLICATE_API_TOKEN,
     });
 
-    const output: string[] = await replicate.run(
+      // @ts-ignore
+      const output = await replicate.run(
       "jagilley/controlnet-canny:aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
       {
         input: {
