@@ -45,7 +45,10 @@ export async function POST(request: Request) {
     console.log("Iniciando o upload das imagens geradas para o Cloudinary...");
 
     const urls: string[] = await Promise.all(
-      output.map(async (blobUrl: ReadableStream) => {
+      output.map(async (blobUrl) => {
+        if (typeof blobUrl !== "string") {
+          throw new Error("Unexpected blobUrl type");
+        }
         // Converte a ReadableStream em blob
         const response = await fetch(blobUrl);
         const buffer = await response.buffer();
