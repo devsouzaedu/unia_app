@@ -38,6 +38,10 @@ export async function POST(request: Request) {
       }
     );
 
+    if (!Array.isArray(output) || typeof output[0] !== "string") {
+      throw new Error("Unexpected output format");
+    }
+
     console.log("Iniciando o upload das imagens geradas para o Cloudinary...");
 
     const urls: string[] = await Promise.all(
