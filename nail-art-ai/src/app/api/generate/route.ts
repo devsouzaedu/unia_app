@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import Replicate from "replicate";
 import FormData from "form-data";
@@ -27,11 +28,11 @@ export async function POST(request: Request) {
     console.log("Enviando a imagem para o modelo ControlNet...");
 
     const replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN!,
+      auth: process.env.REPLICATE_API_TOKEN,
     });
 
-    // Executa o modelo e obtém o retorno como unknown para validação
-    const outputRaw: unknown = await replicate.run(
+    // Força o retorno para string[] com cast
+    const output = (await replicate.run(
       "jagilley/controlnet-canny:aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
       {
         input: {
@@ -44,13 +45,11 @@ export async function POST(request: Request) {
           num_outputs: 1,
         },
       }
-    );
+    )) as unknown as string[];
 
-    // Validação do retorno: espera-se um array de strings
-    if (!Array.isArray(outputRaw) || typeof outputRaw[0] !== "string") {
+    if (!Array.isArray(output) || typeof output[0] !== "string") {
       throw new Error("Unexpected output format");
     }
-    const output = outputRaw as string[];
 
     console.log("Iniciando o upload das imagens geradas para o Cloudinary...");
 
@@ -59,7 +58,7 @@ export async function POST(request: Request) {
         if (typeof blobUrl !== "string") {
           throw new Error("Unexpected blobUrl type");
         }
-        // Converte o blobUrl em buffer
+        // Converte a URL em buffer
         const response = await fetch(blobUrl);
         const buffer = await response.buffer();
 
@@ -82,16 +81,10 @@ export async function POST(request: Request) {
       })
     );
 
-    console.log(
-      "Imagens carregadas com sucesso no Cloudinary:",
-      urls.filter(Boolean)
-    );
+    console.log("Imagens carregadas com sucesso no Cloudinary:", urls.filter(Boolean));
     return NextResponse.json({ urls: urls.filter(Boolean) });
   } catch (error) {
     console.error("Erro inesperado no servidor:", error);
-    return NextResponse.json(
-      { error: "Erro interno no servidor." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro interno no servidor." }, { status: 500 });
   }
 }
