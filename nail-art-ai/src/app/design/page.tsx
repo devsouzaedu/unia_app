@@ -1,7 +1,7 @@
 "use client";
 
+// Força renderização dinâmica (não pré-renderiza a página)
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -10,7 +10,7 @@ export default function DesignPage() {
   const [urls, setUrls] = useState<string[]>([]);
 
   useEffect(() => {
-    // Garante que o código seja executado apenas no cliente
+    // Executa apenas no cliente
     const searchParams = new URLSearchParams(window.location.search);
     try {
       const parsed = JSON.parse(searchParams.get("urls") || "[]");
@@ -26,6 +26,7 @@ export default function DesignPage() {
       <p className="text-lg text-gray-600 mb-6 text-center">
         Aqui estão suas unhas inspiradas na imagem enviada!
       </p>
+
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {urls.map((url: string, index: number) => (
           <Image
