@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import Replicate from "replicate";
 import FormData from "form-data";
@@ -13,45 +12,54 @@ export async function POST(request: Request) {
 
     if (!image || !(image instanceof File)) {
       console.error("Nenhuma imagem foi enviada ou o tipo é inválido.");
-      return NextResponse.json({ error: "Nenhuma imagem foi enviada ou o tipo é inválido." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Nenhuma imagem foi enviada ou o tipo é inválido." },
+        { status: 400 }
+      );
     }
 
     console.log("Imagem recebida com sucesso, convertendo para base64...");
     const arrayBuffer = await image.arrayBuffer();
-    const base64Image = `data:image/jpeg;base64,${Buffer.from(arrayBuffer).toString("base64")}`;
+    const base64Image = `data:image/jpeg;base64,${Buffer.from(arrayBuffer).toString(
+      "base64"
+    )}`;
 
     console.log("Enviando a imagem para o modelo ControlNet...");
 
     const replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN,
+      auth: process.env.REPLICATE_API_TOKEN!,
     });
 
-      // @ts-ignore
-      const output = await replicate.run(
+    // Executa o modelo e obtém o retorno como unknown para validação
+    const outputRaw: unknown = await replicate.run(
       "jagilley/controlnet-canny:aff48af9c68d162388d230a2ab003f68d2638d88307bdaf1c2f1ac95079c9613",
       {
         input: {
           image: base64Image,
-          prompt: "A female hand with 10 fingers, close-up, with fingernails designed based on the inspiration image. Focus on the fingernails and their style, color, and texture. No faces, no backgrounds.",
-          negative_prompt: "faces, full body, background, blurry, multiple people, objects unrelated to nails",
+          prompt:
+            "A female hand with 10 fingers, close-up, with fingernails designed based on the inspiration image. Focus on the fingernails and their style, color, and texture. No faces, no backgrounds.",
+          negative_prompt:
+            "faces, full body, background, blurry, multiple people, objects unrelated to nails",
           guidance_scale: 7.5,
           num_outputs: 1,
         },
       }
     );
 
-    if (!Array.isArray(output) || typeof output[0] !== "string") {
+    // Validação do retorno: espera-se um array de strings
+    if (!Array.isArray(outputRaw) || typeof outputRaw[0] !== "string") {
       throw new Error("Unexpected output format");
     }
+    const output = outputRaw as string[];
 
     console.log("Iniciando o upload das imagens geradas para o Cloudinary...");
 
     const urls: string[] = await Promise.all(
-      output.map(async (blobUrl) => {
+      output.map(async (blobUrl: string) => {
         if (typeof blobUrl !== "string") {
           throw new Error("Unexpected blobUrl type");
         }
-        // Converte a ReadableStream em blob
+        // Converte o blobUrl em buffer
         const response = await fetch(blobUrl);
         const buffer = await response.buffer();
 
@@ -74,11 +82,16 @@ export async function POST(request: Request) {
       })
     );
 
-    console.log("Imagens carregadas com sucesso no Cloudinary:", urls.filter(Boolean));
-    return NextResponse.json({ urls: urls.filter(Boolean) });  // Filtra URLs válidas
-
+    console.log(
+      "Imagens carregadas com sucesso no Cloudinary:",
+      urls.filter(Boolean)
+    );
+    return NextResponse.json({ urls: urls.filter(Boolean) });
   } catch (error) {
     console.error("Erro inesperado no servidor:", error);
-    return NextResponse.json({ error: "Erro interno no servidor." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro interno no servidor." },
+      { status: 500 }
+    );
   }
 }
