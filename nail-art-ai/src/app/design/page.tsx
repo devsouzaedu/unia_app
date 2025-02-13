@@ -1,23 +1,24 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useMemo } from "react";
 
 export default function DesignPage() {
-  const searchParams = useSearchParams();
+  const [urls, setUrls] = useState<string[]>([]);
 
-  // useMemo para evitar re-parsing desnecessário e capturar erros de JSON
-  const urls: string[] = useMemo(() => {
+  useEffect(() => {
+    // Garante que o código seja executado apenas no cliente
+    const searchParams = new URLSearchParams(window.location.search);
     try {
-      return JSON.parse(searchParams.get("urls") || "[]");
+      const parsed = JSON.parse(searchParams.get("urls") || "[]");
+      setUrls(parsed);
     } catch (error) {
       console.error("Erro ao parsear URLs:", error);
-      return [];
     }
-  }, [searchParams]);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
@@ -25,7 +26,6 @@ export default function DesignPage() {
       <p className="text-lg text-gray-600 mb-6 text-center">
         Aqui estão suas unhas inspiradas na imagem enviada!
       </p>
-
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {urls.map((url: string, index: number) => (
           <Image
@@ -35,7 +35,7 @@ export default function DesignPage() {
             width={128}
             height={128}
             className="rounded shadow"
-            unoptimized={true} // Necessário se as URLs forem de domínios externos
+            unoptimized={true}
           />
         ))}
       </div>
